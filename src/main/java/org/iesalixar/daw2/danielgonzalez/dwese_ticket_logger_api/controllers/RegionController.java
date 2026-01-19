@@ -54,7 +54,7 @@ public class RegionController {
             // 3. `.toList()`: Recoge todos los elementos procesados del flujo en una nueva lista de tipo `RegionDTO`.
             // El resultado es una lista de `RegionDTO` que representa los datos transformados de las entidades `Region`.
             List<RegionDTO> regionDTOs = regions.stream()
-                    .map(RegionMapper::toDTO)
+                    .map(RegionMapper::toDTO)//cambio
                     .toList();
 
             logger.info("Se han encontrado {} regiones.", regions.size());
