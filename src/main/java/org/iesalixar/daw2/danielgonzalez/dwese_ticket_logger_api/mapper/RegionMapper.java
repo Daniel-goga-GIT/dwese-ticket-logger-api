@@ -14,7 +14,7 @@ public class RegionMapper {
      * @param region Entidad de región.
      * @return DTO correspondiente.
      */
-    public RegionDTO toDTO(Region region) {
+    public static RegionDTO toDTO(Region region) {
         RegionDTO dto = new RegionDTO();
         dto.setId(region.getId());
         dto.setCode(region.getCode());

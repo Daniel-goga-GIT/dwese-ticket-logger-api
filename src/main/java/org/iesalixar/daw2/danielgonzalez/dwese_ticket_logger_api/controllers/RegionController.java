@@ -3,6 +3,7 @@ package org.iesalixar.daw2.danielgonzalez.dwese_ticket_logger_api.controllers;
 import jakarta.validation.Valid;
 import org.iesalixar.daw2.danielgonzalez.dwese_ticket_logger_api.dtos.RegionDTO;
 import org.iesalixar.daw2.danielgonzalez.dwese_ticket_logger_api.entities.Region;
+import org.iesalixar.daw2.danielgonzalez.dwese_ticket_logger_api.mapper.RegionMapper;
 import org.iesalixar.daw2.danielgonzalez.dwese_ticket_logger_api.repositories.RegionRepository;
 import org.iesalixar.daw2.danielgonzalez.dwese_ticket_logger_api.services.FileStorageService;
 import org.slf4j.Logger;
@@ -53,7 +54,7 @@ public class RegionController {
             // 3. `.toList()`: Recoge todos los elementos procesados del flujo en una nueva lista de tipo `RegionDTO`.
             // El resultado es una lista de `RegionDTO` que representa los datos transformados de las entidades `Region`.
             List<RegionDTO> regionDTOs = regions.stream()
-                    .map(regionMapper::toDTO)
+                    .map(RegionMapper::toDTO)
                     .toList();
 
             logger.info("Se han encontrado {} regiones.", regions.size());
