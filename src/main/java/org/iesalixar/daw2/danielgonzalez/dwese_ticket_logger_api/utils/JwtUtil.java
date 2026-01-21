@@ -3,9 +3,11 @@ package org.iesalixar.daw2.danielgonzalez.dwese_ticket_logger_api.utils;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import javax.crypto.SecretKey;
+import java.security.KeyPair;
 import java.util.Date;
 import java.util.List;
 import java.util.function.Function;
@@ -13,26 +15,10 @@ import java.util.function.Function;
 @Component
 public class JwtUtil {
 
-    /**
-     * Clave secreta para firmar y verificar el token JWT.
-     * La clave se inyecta desde el archivo application.properties para mantener
-     * la seguridad y permitir flexibilidad en entornos diferentes.
-     *
-     * @Value obtiene el valor configurado en application.properties, por ejemplo:
-     * jwt.secret=tu-clave-super-segura-de-al-menos-32-caracteres
-     */
-    @Value("${jwt.secret}")
-    private String secretKeyFromProperties;
+    @Autowired
+    private KeyPair jwtKeyPair;
 
-    /**
-     * Obtiene la clave de firma (SecretKey) usando la clave secreta inyectada.
-     * Keys.hmacShaKeyFor convierte la clave en un objeto SecretKey.
-     *
-     * Es importante que la clave tenga al menos 256 bits (32 caracteres) para HS256.
-     */
-    private SecretKey getSigningKey() {
-        return Keys.hmacShaKeyFor(secretKeyFromProperties.getBytes());
-    }
+    private static final long JWT_EXPIRATION = 3600000; // 1 hora
 
     /**
      * Extrae el nombre de usuario (claim "sub") del token.
@@ -60,15 +46,15 @@ public class JwtUtil {
     /**
      * Extrae todos los claims (payload) del token JWT.
      *
-     * Utiliza el parser de JJWT configurado con la clave de firma (SecretKey).
-     * Verifica la integridad y autenticidad del token antes de extraer los claims.
+     * Utiliza el parser de JJWT configurado con la clave pública del par de claves.
+     * Este método valida la integridad y autenticidad del token antes de extraer los claims.
      *
      * @param token el token JWT.
      * @return los claims contenidos en el token.
      */
     public Claims extractAllClaims(String token) {
         return Jwts.parser()
-                .verifyWith(getSigningKey()) // Configura la clave para verificar la firma
+                .verifyWith(jwtKeyPair.getPublic()) // Configura la clave para verificar la firma
                 .build()
                 .parseSignedClaims(token) // Verifica el token y lo parsea
                 .getPayload(); // Devuelve el cuerpo del JWT (claims)
@@ -77,8 +63,8 @@ public class JwtUtil {
     /**
      * Genera un token JWT para un usuario con roles específicos.
      *
-     * Incluye los roles en el token como parte de los claims y configura
-     * una duración de 1 hora.
+     * Incluye los roles en el token como parte de los claims, configura
+     * una fecha de emisión y una duración de 1 hora.
      *
      * @param username el nombre del usuario para el cual se genera el token.
      * @param roles la lista de roles del usuario (por ejemplo, ["USER", "ADMIN"]).
@@ -89,8 +75,8 @@ public class JwtUtil {
                 .subject(username) // Configura el claim "sub" (nombre de usuario)
                 .claim("roles", roles) // Incluye los roles como claim adicional
                 .issuedAt(new Date()) // Fecha de emisión del token
-                .expiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60)) // Expira en 1 hora
-                .signWith(getSigningKey()) // Firma el token con la clave secreta
+                .expiration(new Date(System.currentTimeMillis() + JWT_EXPIRATION)) // Expira en 1 hora
+                .signWith(jwtKeyPair.getPrivate(), Jwts.SIG.RS256) // Firma el token con la clave secreta
                 .compact(); // Genera el token en formato JWT
     }
 
@@ -104,8 +90,14 @@ public class JwtUtil {
      * @return true si el token es válido, false en caso contrario.
      */
     public boolean validateToken(String token, String username) {
-        final String extractedUsername = extractUsername(token); // Extrae el nombre de usuario del token
-        return extractedUsername.equals(username) && !isTokenExpired(token); // Verifica usuario y expiración
+        Claims claims = Jwts.parser()
+                .verifyWith(jwtKeyPair.getPublic()) // Verifica la firma con la clave pública
+                .build()
+                .parseSignedClaims(token)
+                .getPayload();
+
+        // Verifica que el usuario coincida y que la fecha no haya expirado
+        return username.equals(claims.getSubject()) && !isTokenExpired(claims);
     }
 
     /**
@@ -113,10 +105,10 @@ public class JwtUtil {
      *
      * Extrae el claim "exp" (fecha de expiración) y lo compara con la fecha actual.
      *
-     * @param token el token JWT.
+     * @param claims los claims del token JWT.
      * @return true si el token ha expirado, false si aún es válido.
      */
-    private boolean isTokenExpired(String token) {
-        return extractClaim(token, Claims::getExpiration).before(new Date());
+    private boolean isTokenExpired(Claims claims) {
+        return claims.getExpiration().before(new Date());
     }
 }
