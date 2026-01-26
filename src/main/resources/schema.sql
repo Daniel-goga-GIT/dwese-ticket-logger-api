@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS provinces (
     code VARCHAR(2) NOT NULL UNIQUE,
     name VARCHAR(100) NOT NULL,
     region_id BIGINT NOT NULL,
-    CONSTRAINT fk_provinces_region FOREIGN KEY (region_id) REFERENCES regions(id)
+    CONSTRAINT fk_provinces_region FOREIGN KEY (region_id) REFERENCES regions(id) ON DELETE CASCADE
 );
 
 -- Crear tabla de supermercados

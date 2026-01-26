@@ -1,5 +1,6 @@
 package org.iesalixar.daw2.danielgonzalez.dwese_ticket_logger_api.entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.NotEmpty;
@@ -62,6 +63,7 @@ public class Province {
     @NotNull(message = "{msg.province.region.notNull}")
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "region_id", nullable = false)
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "provinces"}) // Evita problemas de serialización
     private Region region;
 
     // Relación uno a muchos con la entidad `Location`. Una provincia puede tener muchas ubicaciones.

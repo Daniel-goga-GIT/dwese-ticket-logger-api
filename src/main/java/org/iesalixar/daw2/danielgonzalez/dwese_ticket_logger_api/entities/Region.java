@@ -1,5 +1,6 @@
 package org.iesalixar.daw2.danielgonzalez.dwese_ticket_logger_api.entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import java.util.List;
 import lombok.Getter;
@@ -27,6 +28,11 @@ public class Region {
     // Campo que almacena el nombre completo de la región, como "Andalucía" o "Cataluña".
     @Column(name = "name", nullable = false, length = 100) // Define la columna correspondiente en la tabla
     private String name;
+    
+    // Relación uno a muchos con la entidad Province. Una región puede tener muchas provincias.
+    @JsonIgnore // Evita ciclo infinito en serialización JSON
+    @OneToMany(mappedBy = "region", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<Province> provinces;
     
     /**
      * Este es un constructor personalizado que no incluye el campo `id`.

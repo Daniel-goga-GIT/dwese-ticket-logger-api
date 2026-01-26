@@ -52,14 +52,8 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/tickets").hasRole("USER") // Solo USER
                         .requestMatchers("/api/admin").hasRole("ADMIN") // Solo ADMIN
-                        .requestMatchers(
-                                "/api/regions",
-                                "/api/provinces",
-                                "/api/supermarkets",
-                                "/api/locations",
-                                "/api/categories").hasRole("MANAGER") // Solo MANAGER
                         .requestMatchers("/api/v1/authenticate", "/api/v1/register").permitAll() // Endpoints públicos
-                        .anyRequest().authenticated() // El resto requiere autenticación
+                        .anyRequest().authenticated() // El resto requiere autenticación (los permisos específicos se manejan con @PreAuthorize)
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class); // Filtro JWT
 

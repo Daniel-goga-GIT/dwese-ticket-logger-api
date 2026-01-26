@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -78,6 +79,7 @@ public class RegionController {
      * @return ResponseEntity con la región creada o un mensaje de error.
      */
     @PostMapping
+    @PreAuthorize("hasRole('MANAGER')")
     public ResponseEntity<?> createRegion(@Valid @RequestBody RegionCreateDTO regionCreateDTO, Locale locale) {
         try {
             RegionDTO createdRegion = regionService.createRegion(regionCreateDTO, locale);
@@ -99,6 +101,7 @@ public class RegionController {
      * @return ResponseEntity con la región actualizada o un mensaje de error.
      */
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('MANAGER')")
     public ResponseEntity<?> updateRegion(
             @PathVariable Long id,
             @Valid @RequestBody RegionCreateDTO regionCreateDTO,
@@ -116,11 +119,13 @@ public class RegionController {
 
     /**
      * Elimina una región específica por su ID.
+     * Solo los usuarios con rol MANAGER pueden eliminar regiones.
      *
      * @param id ID de la región a eliminar.
      * @return ResponseEntity indicando el resultado de la operación.
      */
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('MANAGER')")
     public ResponseEntity<?> deleteRegion(@PathVariable Long id) {
         try {
             regionService.deleteRegion(id);
