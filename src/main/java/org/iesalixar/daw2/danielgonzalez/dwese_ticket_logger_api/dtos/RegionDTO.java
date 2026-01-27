@@ -31,4 +31,9 @@ public class RegionDTO {
      * Ejemplo: "Andalucía", "Cataluña".
      */
     private String name;
+
+    /**
+     * Ruta de la imagen de la región.
+     */
+    private String imagePath;
 }

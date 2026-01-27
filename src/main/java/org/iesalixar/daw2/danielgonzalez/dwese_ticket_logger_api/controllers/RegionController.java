@@ -1,6 +1,12 @@
 package org.iesalixar.daw2.danielgonzalez.dwese_ticket_logger_api.controllers;
 
 import jakarta.validation.Valid;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import org.iesalixar.daw2.danielgonzalez.dwese_ticket_logger_api.dtos.RegionCreateDTO;
 import org.iesalixar.daw2.danielgonzalez.dwese_ticket_logger_api.dtos.RegionDTO;
 import org.iesalixar.daw2.danielgonzalez.dwese_ticket_logger_api.services.RegionService;
@@ -12,9 +18,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 
 /**
  * Controlador que maneja las operaciones CRUD para la entidad Region.
@@ -29,17 +37,27 @@ public class RegionController {
     private RegionService regionService;
 
     /**
-     * Lista todas las regiones almacenadas en la base de datos.
+     * Obtiene todas las regiones almacenadas en la base de datos.
      *
-     * @return ResponseEntity con la lista de regiones o un error en caso de fallo.
+     * @return Lista de regiones.
      */
-    @GetMapping
-    public ResponseEntity<List<RegionDTO>> getAllRegions() {
-        logger.info("Solicitando la lista de todas las regiones...");
+        @Operation(summary = "Obtener todas las regiones", description = "Devuelve una lista de todas las regiones disponibles en el sistema.")
+        @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Lista de regiones recuperada exitosamente",
+                content = @Content(mediaType = "application/json",
+                    array = @ArraySchema(schema = @Schema(implementation = RegionDTO.class)))),
+            @ApiResponse(responseCode = "500", description = "Error interno del servidor")
+        })
+        @GetMapping
+        public ResponseEntity<Page<RegionDTO>> getAllRegions(
+                @PageableDefault(size = 10, sort = "name") Pageable pageable
+        ) {
+        logger.info("Solicitando todas las regiones con paginación: página {}, tamaño {}",
+                pageable.getPageNumber(), pageable.getPageSize());
         try {
-            List<RegionDTO> regionDTOs = regionService.getAllRegions();
-            logger.info("Se han encontrado {} regiones.", regionDTOs.size());
-            return ResponseEntity.ok(regionDTOs);
+            Page<RegionDTO> regions = regionService.getAllRegions(pageable);
+            logger.info("Se han encontrado {} regiones.", regions.getTotalElements());
+            return ResponseEntity.ok(regions);
         } catch (Exception e) {
             logger.error("Error al listar las regiones: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
@@ -52,8 +70,16 @@ public class RegionController {
      * @param id ID de la región solicitada.
      * @return ResponseEntity con la región encontrada o un mensaje de error si no existe.
      */
-    @GetMapping("/{id}")
-    public ResponseEntity<?> getRegionById(@PathVariable Long id) {
+        @Operation(summary = "Obtener una región por ID", description = "Recupera una región específica según su identificador único.")
+        @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Región encontrada",
+                content = @Content(mediaType = "application/json",
+                    schema = @Schema(implementation = RegionDTO.class))),
+            @ApiResponse(responseCode = "404", description = "Región no encontrada"),
+            @ApiResponse(responseCode = "500", description = "Error interno del servidor")
+        })
+        @GetMapping("/{id}")
+        public ResponseEntity<?> getRegionById(@PathVariable Long id) {
         logger.info("Buscando región con ID {}", id);
         try {
             Optional<RegionDTO> regionDTO = regionService.getRegionById(id);
@@ -78,41 +104,65 @@ public class RegionController {
      * @param locale Idioma de los mensajes de error.
      * @return ResponseEntity con la región creada o un mensaje de error.
      */
-    @PostMapping
-    @PreAuthorize("hasRole('MANAGER')")
-    public ResponseEntity<?> createRegion(@Valid @RequestBody RegionCreateDTO regionCreateDTO, Locale locale) {
+        @Operation(summary = "Crear una nueva región", description = "Permite registrar una nueva región en la base de datos.")
+        @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "Región creada exitosamente",
+                content = @Content(mediaType = "application/json",
+                    schema = @Schema(implementation = RegionDTO.class))),
+            @ApiResponse(responseCode = "400", description = "Datos inválidos proporcionados"),
+            @ApiResponse(responseCode = "500", description = "Error interno del servidor")
+        })
+        @PostMapping(consumes = "multipart/form-data")
+        @PreAuthorize("hasRole('MANAGER')")
+        public ResponseEntity<?> createRegion(@Valid @ModelAttribute RegionCreateDTO regionCreateDTO, Locale locale) {
         try {
-            RegionDTO createdRegion = regionService.createRegion(regionCreateDTO, locale);
-            return ResponseEntity.status(HttpStatus.CREATED).body(createdRegion);
+            RegionDTO regionDTO = regionService.createRegion(regionCreateDTO, locale);
+            return ResponseEntity.status(HttpStatus.CREATED).body(regionDTO);
         } catch (IllegalArgumentException e) {
+            logger.warn("Error al crear la región: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        } catch (RuntimeException e) {
+            logger.error("Error al guardar la imagen: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error al guardar la imagen.");
         } catch (Exception e) {
-            logger.error("Error al crear la región: {}", e.getMessage());
+            logger.error("Error inesperado al crear la región: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error al crear la región.");
         }
     }
 
     /**
-     * Actualiza una región existente por su ID.
+     * Actualiza una región existente.
      *
      * @param id ID de la región a actualizar.
-     * @param regionCreateDTO DTO con los nuevos datos.
-     * @param locale Idioma de los mensajes de error.
+     * @param regionCreateDTO DTO con los datos para actualizar la región.
+     * @param locale Idioma para los mensajes de error.
      * @return ResponseEntity con la región actualizada o un mensaje de error.
      */
-    @PutMapping("/{id}")
-    @PreAuthorize("hasRole('MANAGER')")
-    public ResponseEntity<?> updateRegion(
+        @Operation(summary = "Actualizar una región", description = "Permite actualizar los datos de una región existente.")
+        @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Región actualizada exitosamente",
+                content = @Content(mediaType = "application/json",
+                    schema = @Schema(implementation = RegionDTO.class))),
+            @ApiResponse(responseCode = "400", description = "Datos inválidos"),
+            @ApiResponse(responseCode = "500", description = "Error interno del servidor")
+        })
+        @PutMapping(value = "/{id}", consumes = "multipart/form-data")
+        @PreAuthorize("hasRole('MANAGER')")
+        public ResponseEntity<?> updateRegion(
             @PathVariable Long id,
-            @Valid @RequestBody RegionCreateDTO regionCreateDTO,
+            @Valid @ModelAttribute RegionCreateDTO regionCreateDTO,
             Locale locale) {
         try {
-            RegionDTO updatedRegion = regionService.updateRegion(id, regionCreateDTO, locale);
-            return ResponseEntity.ok(updatedRegion);
+            RegionDTO regionDTO = regionService.updateRegion(id, regionCreateDTO, locale);
+            return ResponseEntity.ok(regionDTO);
         } catch (IllegalArgumentException e) {
+            logger.warn("Error al actualizar la región con ID {}: {}", id, e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        } catch (RuntimeException e) {
+            logger.error("Error al guardar la imagen para la región con ID {}: {}", id, e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error al guardar la imagen.");
         } catch (Exception e) {
-            logger.error("Error al actualizar la región con ID {}: {}", id, e.getMessage());
+            logger.error("Error inesperado al actualizar la región con ID {}: {}", id, e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error al actualizar la región.");
         }
     }
@@ -124,13 +174,21 @@ public class RegionController {
      * @param id ID de la región a eliminar.
      * @return ResponseEntity indicando el resultado de la operación.
      */
-    @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('MANAGER')")
-    public ResponseEntity<?> deleteRegion(@PathVariable Long id) {
+        @Operation(summary = "Eliminar una región", description = "Permite eliminar una región específica de la base de datos.")
+        @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Región eliminada exitosamente"),
+            @ApiResponse(responseCode = "404", description = "Región no encontrada"),
+            @ApiResponse(responseCode = "500", description = "Error interno del servidor")
+        })
+        @DeleteMapping("/{id}")
+        @PreAuthorize("hasRole('MANAGER')")
+        public ResponseEntity<?> deleteRegion(@PathVariable Long id) {
         try {
+            logger.info("Eliminando región con ID {}", id);
             regionService.deleteRegion(id);
-            return ResponseEntity.noContent().build();
+            return ResponseEntity.ok("Región eliminada con éxito.");
         } catch (IllegalArgumentException e) {
+            logger.warn("Error al eliminar la región con ID {}: {}", id, e.getMessage());
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         } catch (Exception e) {
             logger.error("Error al eliminar la región con ID {}: {}", id, e.getMessage());

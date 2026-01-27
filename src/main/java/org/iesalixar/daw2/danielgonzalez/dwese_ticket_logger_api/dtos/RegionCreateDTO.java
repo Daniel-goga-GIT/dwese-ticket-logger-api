@@ -2,6 +2,7 @@ package org.iesalixar.daw2.danielgonzalez.dwese_ticket_logger_api.dtos;
 
 import lombok.Getter;
 import lombok.Setter;
+import org.springframework.web.multipart.MultipartFile;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.Size;
 
@@ -32,4 +33,10 @@ public class RegionCreateDTO {
     @NotEmpty(message = "{msg.region.name.notEmpty}")
     @Size(max = 100, message = "{msg.region.name.size}")
     private String name;
+
+    /**
+     * Archivo de imagen opcional para la región.
+     * Si viene informado y no vacío, se guardará y se asociará a la región.
+     */
+    private MultipartFile imageFile;
 }

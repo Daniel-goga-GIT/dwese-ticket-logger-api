@@ -52,6 +52,14 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/tickets").hasRole("USER") // Solo USER
                         .requestMatchers("/api/admin").hasRole("ADMIN") // Solo ADMIN
+                    .requestMatchers(
+                        "/api-docs/**",
+                        "/api-docs.yaml",
+                        "/v3/api-docs/**",
+                        "/swagger-ui/**",
+                        "/swagger-ui.html",
+                        "/swagger-ui-custom.html"
+                    ).permitAll() // Swagger / OpenAPI docs
                         .requestMatchers("/api/v1/authenticate", "/api/v1/register").permitAll() // Endpoints públicos
                         .anyRequest().authenticated() // El resto requiere autenticación (los permisos específicos se manejan con @PreAuthorize)
                 )

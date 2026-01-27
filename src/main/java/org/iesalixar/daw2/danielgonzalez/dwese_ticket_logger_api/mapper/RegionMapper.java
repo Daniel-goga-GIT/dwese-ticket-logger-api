@@ -19,6 +19,7 @@ public class RegionMapper {
         dto.setId(region.getId());
         dto.setCode(region.getCode());
         dto.setName(region.getName());
+        dto.setImagePath(region.getImagePath());
         return dto;
     }
 
@@ -33,6 +34,7 @@ public class RegionMapper {
         region.setId(dto.getId());
         region.setCode(dto.getCode());
         region.setName(dto.getName());
+        region.setImagePath(dto.getImagePath());
         return region;
     }
 

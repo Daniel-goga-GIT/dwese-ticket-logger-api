@@ -28,6 +28,11 @@ public class Region {
     // Campo que almacena el nombre completo de la región, como "Andalucía" o "Cataluña".
     @Column(name = "name", nullable = false, length = 100) // Define la columna correspondiente en la tabla
     private String name;
+
+    // Campo que almacena la ruta de la imagen de la región.
+    // Ajustado para coincidir con la columna 'image' definida en schema.sql
+    @Column(name = "image")
+    private String imagePath;
     
     // Relación uno a muchos con la entidad Province. Una región puede tener muchas provincias.
     @JsonIgnore // Evita ciclo infinito en serialización JSON
