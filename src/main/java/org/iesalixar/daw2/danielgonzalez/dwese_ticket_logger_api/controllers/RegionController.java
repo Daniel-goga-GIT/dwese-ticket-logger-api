@@ -98,13 +98,13 @@ public class RegionController {
     }
 
     /**
-     * Crea una nueva región en la base de datos.
+     * Crea una nueva región en la base de datos (con imagen usando multipart/form-data).
      *
      * @param regionCreateDTO DTO que representa la nueva región.
      * @param locale Idioma de los mensajes de error.
      * @return ResponseEntity con la región creada o un mensaje de error.
      */
-        @Operation(summary = "Crear una nueva región", description = "Permite registrar una nueva región en la base de datos.")
+        @Operation(summary = "Crear una nueva región con imagen", description = "Permite registrar una nueva región con archivo de imagen opcional usando multipart/form-data.")
         @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Región creada exitosamente",
                 content = @Content(mediaType = "application/json",
@@ -114,7 +114,40 @@ public class RegionController {
         })
         @PostMapping(consumes = "multipart/form-data")
         @PreAuthorize("hasRole('MANAGER')")
-        public ResponseEntity<?> createRegion(@Valid @ModelAttribute RegionCreateDTO regionCreateDTO, Locale locale) {
+        public ResponseEntity<?> createRegionWithFile(@Valid @ModelAttribute RegionCreateDTO regionCreateDTO, Locale locale) {
+        try {
+            RegionDTO regionDTO = regionService.createRegion(regionCreateDTO, locale);
+            return ResponseEntity.status(HttpStatus.CREATED).body(regionDTO);
+        } catch (IllegalArgumentException e) {
+            logger.warn("Error al crear la región: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        } catch (RuntimeException e) {
+            logger.error("Error al guardar la imagen: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error al guardar la imagen.");
+        } catch (Exception e) {
+            logger.error("Error inesperado al crear la región: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error al crear la región.");
+        }
+    }
+
+    /**
+     * Crea una nueva región en la base de datos (sin imagen usando JSON).
+     *
+     * @param regionCreateDTO DTO que representa la nueva región.
+     * @param locale Idioma de los mensajes de error.
+     * @return ResponseEntity con la región creada o un mensaje de error.
+     */
+        @Operation(summary = "Crear una nueva región sin imagen", description = "Permite registrar una nueva región sin imagen usando JSON.")
+        @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "Región creada exitosamente",
+                content = @Content(mediaType = "application/json",
+                    schema = @Schema(implementation = RegionDTO.class))),
+            @ApiResponse(responseCode = "400", description = "Datos inválidos proporcionados"),
+            @ApiResponse(responseCode = "500", description = "Error interno del servidor")
+        })
+        @PostMapping(consumes = "application/json")
+        @PreAuthorize("hasRole('MANAGER')")
+        public ResponseEntity<?> createRegion(@Valid @RequestBody RegionCreateDTO regionCreateDTO, Locale locale) {
         try {
             RegionDTO regionDTO = regionService.createRegion(regionCreateDTO, locale);
             return ResponseEntity.status(HttpStatus.CREATED).body(regionDTO);
