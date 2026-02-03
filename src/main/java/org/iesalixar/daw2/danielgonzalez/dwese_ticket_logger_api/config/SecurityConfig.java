@@ -18,6 +18,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
+import static org.springframework.security.config.Customizer.withDefaults;
+
 /**
  * Configura la seguridad de la aplicación, definiendo autenticación y autorización
  * para diferentes roles de usuario, y gestionando la política de sesiones.
@@ -46,22 +48,20 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
+                .cors(withDefaults())
                 .csrf(csrf -> csrf.disable()) // Las APIs REST no suelen necesitar CSRF
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // Sin sesiones
-                .authenticationProvider(authenticationProvider())
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/tickets").hasRole("USER") // Solo USER
                         .requestMatchers("/api/admin").hasRole("ADMIN") // Solo ADMIN
-                    .requestMatchers(
-                        "/api-docs/**",
-                        "/api-docs.yaml",
-                        "/v3/api-docs/**",
-                        "/swagger-ui/**",
-                        "/swagger-ui.html",
-                        "/swagger-ui-custom.html"
-                    ).permitAll() // Swagger / OpenAPI docs
+                        .requestMatchers(
+                                "/api/regions",
+                                "/api/provinces",
+                                "/api/supermarkets",
+                                "/api/locations",
+                                "/api/categories").hasRole("MANAGER") // Solo MANAGER
                         .requestMatchers("/api/v1/authenticate", "/api/v1/register").permitAll() // Endpoints públicos
-                        .anyRequest().authenticated() // El resto requiere autenticación (los permisos específicos se manejan con @PreAuthorize)
+                        .anyRequest().authenticated() // El resto requiere autenticación
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class); // Filtro JWT
 
