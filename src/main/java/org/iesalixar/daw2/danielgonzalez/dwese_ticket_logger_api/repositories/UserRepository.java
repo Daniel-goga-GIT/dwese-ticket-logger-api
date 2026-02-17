@@ -2,6 +2,8 @@ package org.iesalixar.daw2.danielgonzalez.dwese_ticket_logger_api.repositories;
 
 import org.iesalixar.daw2.danielgonzalez.dwese_ticket_logger_api.entities.User;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.Optional;
 
@@ -17,7 +19,8 @@ public interface UserRepository extends JpaRepository<User, Long> {
      * @param username el nombre de usuario a buscar.
      * @return un Optional que contiene el usuario si se encuentra, o vacío si no existe.
      */
-    Optional<User> findByUsername(String username);
+    @Query("SELECT u FROM User u LEFT JOIN FETCH u.roles WHERE u.username = :username")
+    Optional<User> findByUsername(@Param("username") String username);
 
     /**
      * Verifica si existe un usuario con el nombre de usuario dado.

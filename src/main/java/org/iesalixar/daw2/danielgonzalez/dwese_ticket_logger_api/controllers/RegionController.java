@@ -113,7 +113,7 @@ public class RegionController {
             @ApiResponse(responseCode = "500", description = "Error interno del servidor")
         })
         @PostMapping(consumes = "multipart/form-data")
-        @PreAuthorize("hasRole('MANAGER')")
+        @PreAuthorize("hasRole('ADMIN')")
         public ResponseEntity<?> createRegionWithFile(@Valid @ModelAttribute RegionCreateDTO regionCreateDTO, Locale locale) {
         try {
             RegionDTO regionDTO = regionService.createRegion(regionCreateDTO, locale);
@@ -146,7 +146,7 @@ public class RegionController {
             @ApiResponse(responseCode = "500", description = "Error interno del servidor")
         })
         @PostMapping(consumes = "application/json")
-        @PreAuthorize("hasRole('MANAGER')")
+        @PreAuthorize("hasRole('ADMIN')")
         public ResponseEntity<?> createRegion(@Valid @RequestBody RegionCreateDTO regionCreateDTO, Locale locale) {
         try {
             RegionDTO regionDTO = regionService.createRegion(regionCreateDTO, locale);
@@ -180,7 +180,7 @@ public class RegionController {
             @ApiResponse(responseCode = "500", description = "Error interno del servidor")
         })
         @PutMapping(value = "/{id}", consumes = "multipart/form-data")
-        @PreAuthorize("hasRole('MANAGER')")
+        @PreAuthorize("hasRole('ADMIN')")
         public ResponseEntity<?> updateRegion(
             @PathVariable Long id,
             @Valid @ModelAttribute RegionCreateDTO regionCreateDTO,
@@ -214,7 +214,7 @@ public class RegionController {
             @ApiResponse(responseCode = "500", description = "Error interno del servidor")
         })
         @DeleteMapping("/{id}")
-        @PreAuthorize("hasRole('MANAGER')")
+        @PreAuthorize("hasRole('ADMIN')")
         public ResponseEntity<?> deleteRegion(@PathVariable Long id) {
         try {
             logger.info("Eliminando región con ID {}", id);

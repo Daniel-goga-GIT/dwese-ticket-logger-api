@@ -81,6 +81,33 @@ public class JwtUtil {
     }
 
     /**
+     * Genera un token JWT para un usuario con roles y datos adicionales del perfil.
+     *
+     * Incluye los roles, id, firstName, lastName e image en el token como claims adicionales.
+     *
+     * @param username el nombre del usuario para el cual se genera el token.
+     * @param roles la lista de roles del usuario (por ejemplo, ["USER", "ADMIN"]).
+    * @param userId el ID del usuario.
+     * @param firstName el nombre del usuario.
+     * @param lastName el apellido del usuario.
+     * @param image la ruta de la imagen del usuario (puede ser null).
+     * @return el token JWT generado.
+     */
+    public String generateToken(String username, List<String> roles, Long userId, String firstName, String lastName, String image) {
+        return Jwts.builder()
+                .subject(username) // Configura el claim "sub" (nombre de usuario)
+                .claim("roles", roles) // Incluye los roles como claim adicional
+                .claim("id", userId) // ID del usuario
+                .claim("firstName", firstName) // Nombre del usuario
+                .claim("lastName", lastName) // Apellido del usuario
+                .claim("image", image) // Imagen del usuario
+                .issuedAt(new Date()) // Fecha de emisión del token
+                .expiration(new Date(System.currentTimeMillis() + JWT_EXPIRATION)) // Expira en 1 hora
+                .signWith(jwtKeyPair.getPrivate(), Jwts.SIG.RS256) // Firma el token con la clave secreta
+                .compact(); // Genera el token en formato JWT
+    }
+
+    /**
      * Valida un token JWT verificando:
      * 1. Que el nombre de usuario extraído del token coincida con el esperado.
      * 2. Que el token no haya expirado.

@@ -1,6 +1,6 @@
 package org.iesalixar.daw2.danielgonzalez.dwese_ticket_logger_api.config;
 
-import org.iesalixar.daw2.danielgonzalez.dwese_ticket_logger_api.services.CustomUserDetailsService;
+import org.iesalixar.daw2.danielgonzalez.dwese_ticket_logger_api.services.UserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,7 +32,7 @@ public class SecurityConfig {
     private static final Logger logger = LoggerFactory.getLogger(SecurityConfig.class);
 
     @Autowired
-    private CustomUserDetailsService userDetailsService;
+    private UserService userDetailsService;
 
     @Autowired
     private JwtAuthenticationFilter jwtAuthenticationFilter;
@@ -52,15 +52,16 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable()) // Las APIs REST no suelen necesitar CSRF
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // Sin sesiones
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/tickets").hasRole("USER") // Solo USER
+                        .requestMatchers("/api/tickets").hasRole("ADMIN") // Solo USER
                         .requestMatchers("/api/admin").hasRole("ADMIN") // Solo ADMIN
                         .requestMatchers(
                                 "/api/regions",
                                 "/api/provinces",
                                 "/api/supermarkets",
                                 "/api/locations",
-                                "/api/categories").hasRole("MANAGER") // Solo MANAGER
+                                "/api/categories").hasRole("ADMIN") // Usuarios autenticados
                         .requestMatchers("/api/v1/authenticate", "/api/v1/register").permitAll() // Endpoints públicos
+                        .requestMatchers("/api/users/**").authenticated() // Usuarios autenticados pueden acceder a su información
                         .anyRequest().authenticated() // El resto requiere autenticación
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class); // Filtro JWT

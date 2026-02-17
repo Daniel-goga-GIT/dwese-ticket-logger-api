@@ -4,6 +4,8 @@ import jakarta.validation.Valid;
 import java.util.List;
 import org.iesalixar.daw2.danielgonzalez.dwese_ticket_logger_api.dtos.AuthRequestDTO;
 import org.iesalixar.daw2.danielgonzalez.dwese_ticket_logger_api.dtos.AuthResponseDTO;
+import org.iesalixar.daw2.danielgonzalez.dwese_ticket_logger_api.entities.User;
+import org.iesalixar.daw2.danielgonzalez.dwese_ticket_logger_api.repositories.UserRepository;
 import org.iesalixar.daw2.danielgonzalez.dwese_ticket_logger_api.utils.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -32,6 +34,9 @@ public class AuthenticationController {
     @Autowired
     private JwtUtil jwtUtil; // Utilidad personalizada para manejar tokens JWT
 
+    @Autowired
+    private UserRepository userRepository; // Repositorio para obtener datos completos del usuario
+
     /**
      * genera un token JWT que incluye información del usuario y sus roles.
      *
@@ -56,8 +61,20 @@ public class AuthenticationController {
             List<String> roles = authentication.getAuthorities().stream()
                     .map(authority -> authority.getAuthority()) // Convierte cada autoridad en su representación de texto
                     .toList();
-            // Genera un token JWT para el usuario autenticado, incluyendo sus roles
-            String token = jwtUtil.generateToken(username, roles);
+            
+            // Busca el usuario en la base de datos para obtener datos adicionales
+            User user = userRepository.findByUsername(username)
+                    .orElseThrow(() -> new RuntimeException("Usuario no encontrado después de autenticación"));
+            
+            // Genera un token JWT para el usuario autenticado, incluyendo sus roles y datos de perfil
+            String token = jwtUtil.generateToken(
+                    username, 
+                    roles, 
+                    user.getId(), 
+                    user.getFirstName(), 
+                    user.getLastName(), 
+                    user.getImage()
+            );
             // Retorna una respuesta con el token JWT y un mensaje de éxito
             return ResponseEntity.ok(new AuthResponseDTO(token, "Authentication successful"));
         } catch (BadCredentialsException e) {

@@ -5,13 +5,12 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.iesalixar.daw2.danielgonzalez.dwese_ticket_logger_api.services.CustomUserDetailsService;
+import org.iesalixar.daw2.danielgonzalez.dwese_ticket_logger_api.services.UserService;
 import org.iesalixar.daw2.danielgonzalez.dwese_ticket_logger_api.utils.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -25,7 +24,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private JwtUtil jwtUtil; // Utilidad para generar, extraer y validar tokens JWT
 
     @Autowired
-    private CustomUserDetailsService userDetailsService; // Servicio personalizado para cargar detalles del usuario
+    private UserService userDetailsService; // Servicio para cargar detalles del usuario
 
     /**
      * Método principal del filtro que intercepta cada solicitud HTTP entrante
@@ -76,8 +75,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 UsernamePasswordAuthenticationToken authToken =
                         new UsernamePasswordAuthenticationToken(userDetails, null, authorities);
 
-                // 11. Configurar los detalles adicionales de la solicitud actual (por ejemplo, dirección IP)
-                authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                // 11. Configurar los details con los claims del token
+                authToken.setDetails(claims);
                 // 12. Establecer la autenticación en el contexto de seguridad de Spring
                 SecurityContextHolder.getContext().setAuthentication(authToken);
             }
